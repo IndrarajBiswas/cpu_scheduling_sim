@@ -29,6 +29,12 @@ This project demonstrates various **CPU Scheduling** algorithms (FCFS, SJF, Roun
 4. **Open the Web UI**:  
    In your browser, go to [http://localhost:5000](http://localhost:5000) to explore the simulator.
 
+Alternatively, you can pull the pre-built Docker image from Docker Hub:
+   ```bash
+   docker pull indygod/cpu_scheduling_sim:latest
+   ```
+   Docker Hub Repository: [https://hub.docker.com/repository/docker/indygod/cpu_scheduling_sim/general](https://hub.docker.com/repository/docker/indygod/cpu_scheduling_sim/general)
+
 ### Option 2: Run Locally (Without Docker)
 1. **Clone the Repository**:
    ```bash
