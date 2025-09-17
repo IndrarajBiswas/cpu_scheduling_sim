@@ -1,5 +1,20 @@
+"""Flask application that visualises classic CPU scheduling algorithms.
+
+The app exposes a small dashboard that generates pseudo-random workloads and
+compares how different scheduling strategies behave under normal conditions and
+after introducing a transient event.  The heavy lifting happens in plain Python
+functions so that the implementation is easy to read and reason about when
+teaching or self-studying operating system concepts.
+"""
+
+from __future__ import annotations
+
+import copy
+import math
+import random
+from typing import Dict, List, Sequence, Tuple
+
 from flask import Flask, render_template, request
-import random, copy, math
 
 app = Flask(__name__)
 
@@ -7,26 +22,38 @@ app = Flask(__name__)
 # Process definition
 # ----------------------------
 class Process:
-    def __init__(self, pid, arrival, burst, priority):
+    """Representation of a process participating in the simulation."""
+
+    def __init__(self, pid: int | str, arrival: int, burst: int, priority: int) -> None:
         self.pid = pid
         self.arrival = arrival
         self.burst = burst
         self.priority = priority
-        self.remaining = burst  # For Round Robin
+
+        # Mutable attributes populated during simulations.
+        self.remaining = burst  # For Round Robin calculations
         self.completion = 0
         self.waiting = 0
         self.turnaround = 0
-        self.start_time = None
+        self.start_time: int | None = None
+        self.response_ratio: float = 0.0  # Used by HRRN scheduling
 
-    def __repr__(self):
+    def __repr__(self) -> str:  # pragma: no cover - debug helper
         return f"P{self.pid}(AT={self.arrival}, BT={self.burst}, Pri={self.priority})"
 
 # ----------------------------
 # Process Generation
 # ----------------------------
-def generate_processes(n=97, arrival_range=(0,20), burst_range=(1,20), priority_range=(1,10)):
-    processes = []
-    for i in range(1, n+1):
+def generate_processes(
+    n: int = 97,
+    arrival_range: Tuple[int, int] = (0, 20),
+    burst_range: Tuple[int, int] = (1, 20),
+    priority_range: Tuple[int, int] = (1, 10),
+) -> List[Process]:
+    """Return a list of randomly generated :class:`Process` objects."""
+
+    processes: List[Process] = []
+    for i in range(1, n + 1):
         arrival = random.randint(*arrival_range)
         burst = random.randint(*burst_range)
         priority = random.randint(*priority_range)
@@ -36,10 +63,12 @@ def generate_processes(n=97, arrival_range=(0,20), burst_range=(1,20), priority_
 # ----------------------------
 # Scheduling Algorithms
 # ----------------------------
-def simulate_fcfs(processes):
+def simulate_fcfs(processes: List[Process]) -> Tuple[List[Tuple[int | str, int, int]], List[Process]]:
+    """Simulate First-Come, First-Served scheduling."""
+
     processes.sort(key=lambda p: p.arrival)
     current_time = 0
-    gantt_chart = []
+    gantt_chart: List[Tuple[int | str, int, int]] = []
     for p in processes:
         if current_time < p.arrival:
             current_time = p.arrival
@@ -51,12 +80,14 @@ def simulate_fcfs(processes):
         gantt_chart.append((p.pid, p.start_time, p.completion))
     return gantt_chart, processes
 
-def simulate_sjf(processes):
+def simulate_sjf(processes: List[Process]) -> Tuple[List[Tuple[int | str, int, int]], List[Process]]:
+    """Simulate the non-preemptive Shortest Job First algorithm."""
+
     processes = sorted(processes, key=lambda p: p.arrival)
-    completed = []
-    gantt_chart = []
+    completed: List[Process] = []
+    gantt_chart: List[Tuple[int | str, int, int]] = []
     current_time = 0
-    ready_queue = []
+    ready_queue: List[Process] = []
     while processes or ready_queue:
         while processes and processes[0].arrival <= current_time:
             ready_queue.append(processes.pop(0))
@@ -76,12 +107,16 @@ def simulate_sjf(processes):
             current_time = processes[0].arrival
     return gantt_chart, completed
 
-def simulate_round_robin(processes, quantum=4):
+def simulate_round_robin(
+    processes: List[Process], quantum: int = 4
+) -> Tuple[List[Tuple[int | str, int, int]], List[Process]]:
+    """Simulate the Round Robin algorithm with a fixed time quantum."""
+
     processes = sorted(processes, key=lambda p: p.arrival)
-    queue = []
+    queue: List[Process] = []
     current_time = 0
-    gantt_chart = []
-    completed = []
+    gantt_chart: List[Tuple[int | str, int, int]] = []
+    completed: List[Process] = []
     while processes or queue:
         if not queue and processes and processes[0].arrival > current_time:
             current_time = processes[0].arrival
@@ -107,12 +142,14 @@ def simulate_round_robin(processes, quantum=4):
                 completed.append(p)
     return gantt_chart, completed
 
-def simulate_priority(processes):
+def simulate_priority(processes: List[Process]) -> Tuple[List[Tuple[int | str, int, int]], List[Process]]:
+    """Simulate non-preemptive scheduling based on static priority values."""
+
     processes = sorted(processes, key=lambda p: p.arrival)
-    ready_queue = []
-    gantt_chart = []
+    ready_queue: List[Process] = []
+    gantt_chart: List[Tuple[int | str, int, int]] = []
     current_time = 0
-    completed = []
+    completed: List[Process] = []
     while processes or ready_queue:
         while processes and processes[0].arrival <= current_time:
             ready_queue.append(processes.pop(0))
@@ -132,12 +169,14 @@ def simulate_priority(processes):
             current_time = processes[0].arrival
     return gantt_chart, completed
 
-def simulate_hrrn(processes):
+def simulate_hrrn(processes: List[Process]) -> Tuple[List[Tuple[int | str, int, int]], List[Process]]:
+    """Simulate Highest Response Ratio Next scheduling."""
+
     processes = sorted(processes, key=lambda p: p.arrival)
-    ready_queue = []
-    gantt_chart = []
+    ready_queue: List[Process] = []
+    gantt_chart: List[Tuple[int | str, int, int]] = []
     current_time = 0
-    completed = []
+    completed: List[Process] = []
     while processes or ready_queue:
         while processes and processes[0].arrival <= current_time:
             ready_queue.append(processes.pop(0))
@@ -163,9 +202,19 @@ def simulate_hrrn(processes):
 # ----------------------------
 # Transient Event Function (for web)
 # ----------------------------
-def apply_transient_event_choice(processes, choice):
+def apply_transient_event_choice(processes: List[Process], choice: str) -> Tuple[List[Process], str]:
+    """Return a mutated process list after applying a transient event.
+
+    Parameters
+    ----------
+    processes:
+        The baseline workload prior to introducing an external disturbance.
+    choice:
+        Identifier of the user-selected scenario coming from the web form.
+    """
+
     event_desc = ""
-    extra_processes = []
+    extra_processes: List[Process] = []
     if choice == '1':
         event_desc = "High-priority process arrives at time=10."
         extra_processes.append(Process(pid='T1', arrival=10, burst=5, priority=1))
@@ -184,7 +233,9 @@ def apply_transient_event_choice(processes, choice):
 # ----------------------------
 # Detailed Statistical Analysis
 # ----------------------------
-def compute_stats(processes):
+def compute_stats(processes: Sequence[Process]) -> Dict[str, float]:
+    """Compute aggregate metrics for a completed set of processes."""
+
     n = len(processes)
     if n == 0:
         return {}
@@ -192,12 +243,12 @@ def compute_stats(processes):
     turn_times = [p.turnaround for p in processes]
     min_wait = min(wait_times)
     max_wait = max(wait_times)
-    avg_wait = sum(wait_times)/n
-    std_wait = math.sqrt(sum((w - avg_wait)**2 for w in wait_times)/n)
+    avg_wait = sum(wait_times) / n
+    std_wait = math.sqrt(sum((w - avg_wait) ** 2 for w in wait_times) / n)
     min_turn = min(turn_times)
     max_turn = max(turn_times)
-    avg_turn = sum(turn_times)/n
-    std_turn = math.sqrt(sum((t - avg_turn)**2 for t in turn_times)/n)
+    avg_turn = sum(turn_times) / n
+    std_turn = math.sqrt(sum((t - avg_turn) ** 2 for t in turn_times) / n)
     first_arrival = min(p.arrival for p in processes)
     last_completion = max(p.completion for p in processes)
     busy_time = sum(p.burst for p in processes)
@@ -214,18 +265,22 @@ def compute_stats(processes):
         "avg_turn": avg_turn,
         "std_turn": std_turn,
         "throughput": throughput,
-        "cpu_utilization": cpu_utilization
+        "cpu_utilization": cpu_utilization,
     }
 
 # ----------------------------
 # Flask Routes
 # ----------------------------
 @app.route("/", methods=["GET"])
-def index():
+def index() -> str:
+    """Render the landing page with simulation controls."""
+
     return render_template("index.html")
 
 @app.route("/simulate", methods=["POST"])
-def simulate():
+def simulate() -> str:
+    """Execute the requested simulations and render the comparison view."""
+
     # Retrieve simulation parameters from form
     num_processes = int(request.form.get("num_processes", 97))
     time_quantum = int(request.form.get("time_quantum", 4))
