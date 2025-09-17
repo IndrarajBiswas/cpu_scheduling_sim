@@ -1,10 +1,22 @@
+# Python
 __pycache__/
-*.log
-*.sqlite3
-*.db
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
 .env
-*.pyc
-venv/
-instance/
+.env.*
+
+# Editors
+.vscode/
+.idea/
 .DS_Store
-*.swp
+
+# Byte-compiled templates
+instance/
+
+# PyInstaller
+build/
+dist/
+*.spec

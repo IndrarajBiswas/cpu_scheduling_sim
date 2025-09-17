@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" role="img" aria-labelledby="title desc">
+  <title id="title">CPU Scheduling Simulator Overview</title>
+  <desc id="desc">Diagram outlining how workloads flow through scheduling algorithms and into the dashboard.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+    <style>
+      text { font-family: 'Inter', 'Segoe UI', sans-serif; fill: #1f2933; }
+      .caption { font-size: 22px; font-weight: 600; }
+      .body { font-size: 18px; }
+      .small { font-size: 16px; fill: #52606d; }
+      .card { fill: white; stroke: #cbd5e1; stroke-width: 2; rx: 16; }
+      .arrow { stroke: #334155; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+      <path d="M0,0 L0,12 L12,6 z" fill="#334155" />
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="520" fill="url(#bg)" />
+
+  <text x="480" y="56" text-anchor="middle" class="caption">CPU Scheduling Simulation Flow</text>
+  <text x="480" y="86" text-anchor="middle" class="small">Generate processes → run algorithms → compare metrics in the dashboard</text>
+
+  <g transform="translate(80, 120)">
+    <rect class="card" width="220" height="140" />
+    <text x="110" y="40" text-anchor="middle" class="body">Workload</text>
+    <text x="110" y="70" text-anchor="middle" class="small">Random process generation</text>
+    <text x="110" y="98" text-anchor="middle" class="small">+ optional transient event</text>
+  </g>
+
+  <g transform="translate(370, 120)">
+    <rect class="card" width="220" height="260" />
+    <text x="110" y="40" text-anchor="middle" class="body">Scheduling Engine</text>
+    <text x="110" y="74" text-anchor="middle" class="small">FCFS • SJF • Round Robin</text>
+    <text x="110" y="102" text-anchor="middle" class="small">Priority • HRRN</text>
+    <text x="110" y="150" text-anchor="middle" class="small">Per-process metrics:</text>
+    <text x="110" y="178" text-anchor="middle" class="small">waiting time, turnaround,</text>
+    <text x="110" y="206" text-anchor="middle" class="small">completion time</text>
+  </g>
+
+  <g transform="translate(660, 120)">
+    <rect class="card" width="220" height="220" />
+    <text x="110" y="40" text-anchor="middle" class="body">Dashboard</text>
+    <text x="110" y="74" text-anchor="middle" class="small">Animated Gantt charts</text>
+    <text x="110" y="102" text-anchor="middle" class="small">Summary statistics</text>
+    <text x="110" y="130" text-anchor="middle" class="small">Chart.js visualisations</text>
+    <text x="110" y="158" text-anchor="middle" class="small">Scenario bookmarking</text>
+  </g>
+
+  <line class="arrow" x1="300" y1="190" x2="370" y2="190" />
+  <line class="arrow" x1="590" y1="190" x2="660" y2="190" />
+  <line class="arrow" x1="770" y1="340" x2="770" y2="420" />
+
+  <rect x="630" y="420" width="280" height="70" class="card" />
+  <text x="770" y="452" text-anchor="middle" class="small">Baseline vs transient comparison</text>
+  <text x="770" y="480" text-anchor="middle" class="small">Export charts • Save scenarios</text>
+</svg>
