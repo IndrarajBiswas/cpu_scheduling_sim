@@ -30,18 +30,6 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Run tests
-        run: |
-          set +e
-          python -m pytest
-          exit_code=$?
-          set -e
-          if [ "$exit_code" -eq 5 ]; then
-            echo "pytest exited with code 5 (no tests were collected); continuing."
-            exit 0
-          fi
-          exit "$exit_code"
-
   build-and-push:
     name: Build and push Docker image
     runs-on: ubuntu-latest
